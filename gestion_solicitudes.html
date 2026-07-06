@@ -1,0 +1,223 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestión de Solicitudes a Sistemas — LIVES</title>
+<style>
+:root{--pet:#0E3B36;--esm:#10B981;--amb:#F59E0B;--sla:#64748B;--roj:#DC2626;--bg:#F1F6F4;--gris:#94A3B8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Calibri,Arial,sans-serif;background:var(--bg);color:#1f2937}
+.hdr{background:var(--pet);color:#fff;padding:16px 26px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:20}
+.brand{font-size:22px;font-weight:300;letter-spacing:.34em}
+.htxt{border-left:1px solid rgba(255,255,255,.28);padding-left:16px}
+.ht{font-size:17px;font-weight:600}.hs{font-size:12px;color:#B9D8D0}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 22px 60px}
+.banner{background:#FFF7ED;border:1px solid #FDBA74;border-radius:8px;padding:12px 16px;font-size:13px;color:#7C2D12;margin-bottom:16px}
+.banner b{color:#7C2D12}
+.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid #E2ECE9;border-radius:10px;padding:12px 16px;flex:1;min-width:120px}
+.kn{font-size:22px;font-weight:700;color:var(--pet)}.kl{font-size:11px;color:var(--sla)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+select,input,textarea{font-family:inherit;font-size:13px;border:1px solid #CBD5D1;border-radius:8px;padding:8px 10px;color:#1f2937;background:#fff}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--esm);border-color:var(--esm)}
+.btn{background:var(--pet);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.btn.alt{background:var(--esm)}.btn.ghost{background:#fff;color:var(--pet);border:1px solid #CBD5D1}
+.btn:hover{opacity:.92}
+.grow{flex:1}
+.card{background:#fff;border:1px solid #E2ECE9;border-radius:10px;padding:13px 16px;margin-bottom:10px}
+.crow{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.cid{font-size:12px;color:var(--sla);font-weight:700}
+.cres{font-size:14px;font-weight:600;color:#111827;margin:2px 0 6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.chip{font-size:11px;font-weight:700;color:#fff;padding:2px 9px;border-radius:20px}
+.cne{font-size:12.5px;color:#374151;margin-top:4px}.cne b{color:var(--pet)}
+.edit{background:#fff;border:1px solid #CBD5D1;color:var(--pet);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.edit:hover{background:var(--bg)}
+.mask{position:fixed;inset:0;background:rgba(14,59,54,.45);display:none;align-items:flex-start;justify-content:center;z-index:40;padding:30px 16px;overflow:auto}
+.mask.on{display:flex}
+.modal{background:#fff;border-radius:12px;max-width:640px;width:100%;padding:22px 24px}
+.modal h3{color:var(--pet);font-size:17px;margin-bottom:4px}
+.msub{font-size:12px;color:var(--sla);margin-bottom:14px}
+.fld{margin-bottom:12px}.fld label{display:block;font-size:12px;font-weight:700;color:var(--sla);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%}.fld textarea{min-height:60px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mact{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.foot{margin-top:24px;font-size:11px;color:var(--sla);text-align:center}
+.empty{text-align:center;color:var(--sla);padding:40px;font-size:14px}
+@media(max-width:640px){.g2{grid-template-columns:1fr}}
+</style></head><body>
+
+<div class="hdr"><div class="brand">LIVES</div><div class="htxt">
+<div class="ht">Gestión de Solicitudes a Sistemas</div>
+<div class="hs">Priorización · necesidad real · estado — por Christian Talepcio</div></div></div>
+
+<div class="wrap">
+<div id="cfgBanner" class="banner" style="display:none"></div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="bar">
+  <select id="fArea"><option value="">Todas las áreas</option></select>
+  <select id="fPri"><option value="">Toda prioridad</option><option>Alta</option><option>Media</option><option>Baja</option><option>Depurar</option></select>
+  <select id="fEst"><option value="">Todo estado</option><option>Nuevo</option><option>En análisis</option><option>Validado con área</option><option>En construcción</option><option>Atendido</option><option>Descartado</option></select>
+  <select id="fDes"><option value="">Todo destino</option><option>Lo resuelvo yo</option><option>A Sistemas</option><option>Depurar</option><option>Por definir</option></select>
+  <input id="fTxt" class="grow" placeholder="Buscar en resumen / necesidad…">
+  <button class="btn ghost" onclick="cargar()">↻ Actualizar</button>
+  <button class="btn alt" onclick="abrirNueva()">＋ Nueva</button>
+</div>
+
+<div id="lista"></div>
+<div class="foot">Confidencial — Uso Interno · Capa de análisis (no reemplaza el ticketing de Sistemas)</div>
+</div>
+
+<!-- Modal editar -->
+<div class="mask" id="mEdit"><div class="modal">
+  <h3 id="eTit">Editar solicitud</h3><div class="msub" id="eSub"></div>
+  <div class="fld"><label>Necesidad real (qué quiere ver/usar)</label><textarea id="eNec"></textarea></div>
+  <div class="fld"><label>Propuesta mejor</label><textarea id="eProp"></textarea></div>
+  <div class="g2">
+    <div class="fld"><label>Destino</label><select id="eDes"><option>Lo resuelvo yo</option><option>A Sistemas</option><option>Depurar</option><option>Por definir</option></select></div>
+    <div class="fld"><label>Responsable</label><select id="eResp"><option>Christian</option><option>Sistemas</option><option>Área</option><option>Christian+Sistemas</option></select></div>
+    <div class="fld"><label>Prioridad</label><select id="ePri"><option>Alta</option><option>Media</option><option>Baja</option><option>Depurar</option></select></div>
+    <div class="fld"><label>Estado</label><select id="eEst"><option>Nuevo</option><option>En análisis</option><option>Validado con área</option><option>En construcción</option><option>Atendido</option><option>Descartado</option></select></div>
+  </div>
+  <div class="fld"><label>Notas de reunión</label><textarea id="eNotas"></textarea></div>
+  <div class="fld"><label>ID de Sistema (si lo cruzaste con el área)</label><input id="eIds"></div>
+  <div class="mact"><button class="btn ghost" onclick="cerrar('mEdit')">Cancelar</button><button class="btn" id="eSave" onclick="guardar()">Guardar</button></div>
+</div></div>
+
+<!-- Modal nueva -->
+<div class="mask" id="mNew"><div class="modal">
+  <h3>Nueva solicitud</h3><div class="msub">Para cuando descargues solicitudes de otra área. El ID_Gestión se genera solo si lo dejas vacío.</div>
+  <div class="g2">
+    <div class="fld"><label>Área</label><input id="nArea" placeholder="p. ej. Logística"></div>
+    <div class="fld"><label>ID de Sistema</label><input id="nIds"></div>
+  </div>
+  <div class="fld"><label>Resumen (qué pidieron)</label><textarea id="nRes"></textarea></div>
+  <div class="g2">
+    <div class="fld"><label>Mi evaluación</label><select id="nEv"><option>Mi enfoque</option><option>Puente</option><option>Núcleo Sistemas</option><option>No aplica</option></select></div>
+    <div class="fld"><label>Prioridad</label><select id="nPri"><option>Alta</option><option>Media</option><option>Baja</option><option>Depurar</option></select></div>
+    <div class="fld"><label>Destino</label><select id="nDes"><option>Por definir</option><option>Lo resuelvo yo</option><option>A Sistemas</option><option>Depurar</option></select></div>
+    <div class="fld"><label>Estado</label><select id="nEst"><option>Nuevo</option><option>En análisis</option></select></div>
+  </div>
+  <div class="fld"><label>Necesidad real (afinar con el área)</label><textarea id="nNec"></textarea></div>
+  <div class="mact"><button class="btn ghost" onclick="cerrar('mNew')">Cancelar</button><button class="btn alt" id="nSave" onclick="crear()">Crear</button></div>
+</div></div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const CONFIG = {
+  APPS_SCRIPT_URL: "PEGAR_AQUI_LA_URL_/exec_DEL_APPS_SCRIPT"
+};
+/* ================================================= */
+
+const PW={"Alta":0,"Media":1,"Baja":2,"Depurar":3,"":4};
+const COL={
+  ev:{"Mi enfoque":"var(--esm)","Puente":"var(--amb)","Núcleo Sistemas":"var(--sla)","No aplica":"var(--gris)"},
+  pri:{"Alta":"var(--pet)","Media":"var(--amb)","Baja":"var(--sla)","Depurar":"var(--roj)"},
+  est:{"Atendido":"var(--esm)","En construcción":"var(--amb)","Descartado":"var(--roj)","Validado con área":"var(--pet)"},
+  des:{"Lo resuelvo yo":"var(--esm)","A Sistemas":"var(--sla)","Depurar":"var(--roj)","Por definir":"var(--gris)"}
+};
+let DATA=[];
+
+function jsonp(params){
+  return new Promise((res,rej)=>{
+    const cb="cb_"+Math.random().toString(36).slice(2);
+    const s=document.createElement("script");
+    window[cb]=d=>{delete window[cb];s.remove();res(d);};
+    params.callback=cb;
+    const qs=Object.keys(params).map(k=>encodeURIComponent(k)+"="+encodeURIComponent(params[k]==null?"":params[k])).join("&");
+    s.src=CONFIG.APPS_SCRIPT_URL+"?"+qs;
+    s.onerror=()=>{delete window[cb];s.remove();rej(new Error("Fallo de red / URL no válida"));};
+    document.body.appendChild(s);
+  });
+}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function chip(txt,color){return txt?`<span class="chip" style="background:${color}">${esc(txt)}</span>`:"";}
+
+async function cargar(){
+  if(CONFIG.APPS_SCRIPT_URL.indexOf("PEGAR")===0){
+    document.getElementById("cfgBanner").style.display="block";
+    document.getElementById("cfgBanner").innerHTML="<b>Falta configurar.</b> Pega la URL /exec de tu Apps Script en el bloque CONFIG (arriba del &lt;script&gt;) y sube el archivo a GitHub Pages. Mientras tanto no hay datos que mostrar.";
+    render(); return;
+  }
+  try{
+    const r=await jsonp({action:"list"});
+    if(!r.ok) throw new Error(r.error||"respuesta no ok");
+    DATA=r.rows||[];
+    const areas=[...new Set(DATA.map(x=>x.Area).filter(Boolean))].sort();
+    const fa=document.getElementById("fArea"); fa.innerHTML='<option value="">Todas las áreas</option>'+areas.map(a=>`<option>${esc(a)}</option>`).join("");
+    render();
+  }catch(e){
+    document.getElementById("lista").innerHTML=`<div class="empty">No se pudo leer el Sheet.<br>${esc(e.message)}</div>`;
+  }
+}
+
+function filtrar(){
+  const a=fArea.value,p=fPri.value,e=fEst.value,d=fDes.value,t=fTxt.value.toLowerCase();
+  return DATA.filter(x=>(!a||x.Area===a)&&(!p||x.Prioridad===p)&&(!e||x.Estado===e)&&(!d||x.Destino===d)
+    &&(!t||((x.Resumen||"")+(x.Necesidad_Real||"")).toLowerCase().includes(t)))
+    .sort((x,y)=>(PW[x.Prioridad]??4)-(PW[y.Prioridad]??4)||String(x.Area).localeCompare(String(y.Area)));
+}
+function kpis(){
+  const box=document.getElementById("kpis");
+  const n=DATA.length, mio=DATA.filter(x=>x.Destino==="Lo resuelvo yo").length,
+    sis=DATA.filter(x=>x.Destino==="A Sistemas").length, alta=DATA.filter(x=>x.Prioridad==="Alta").length,
+    aten=DATA.filter(x=>x.Estado==="Atendido").length, pend=DATA.filter(x=>x.Estado!=="Atendido"&&x.Estado!=="Descartado").length;
+  box.innerHTML=[[n,"Solicitudes"],[alta,"Prioridad Alta"],[mio,"Las resuelvo yo"],[sis,"A Sistemas"],[pend,"Pendientes"],[aten,"Atendidas"]]
+    .map(([a,b])=>`<div class="kpi"><div class="kn">${a}</div><div class="kl">${b}</div></div>`).join("");
+}
+function render(){
+  kpis();
+  const rows=filtrar(); const L=document.getElementById("lista");
+  if(!rows.length){L.innerHTML='<div class="empty">Sin solicitudes que coincidan.</div>';return;}
+  L.innerHTML=rows.map(x=>`<div class="card">
+    <div class="crow"><div>
+      <div class="cid">${esc(x.ID_Gestion)}${x.ID_Sistema?" · "+esc(x.ID_Sistema):""} · ${esc(x.Area)}</div>
+      <div class="cres">${esc(x.Resumen)}</div>
+      <div class="chips">
+        ${chip(x.Prioridad,COL.pri[x.Prioridad]||"var(--sla)")}
+        ${chip(x.Mi_Evaluacion,COL.ev[x.Mi_Evaluacion]||"var(--sla)")}
+        ${chip(x.Destino,COL.des[x.Destino]||"var(--gris)")}
+        ${chip(x.Estado,COL.est[x.Estado]||"var(--sla)")}
+      </div>
+      ${x.Necesidad_Real?`<div class="cne"><b>Necesidad:</b> ${esc(x.Necesidad_Real)}</div>`:""}
+      ${x.Propuesta_Mejor?`<div class="cne"><b>Propuesta:</b> ${esc(x.Propuesta_Mejor)}</div>`:""}
+      ${x.Notas_Reunion?`<div class="cne"><b>Notas:</b> ${esc(x.Notas_Reunion)}</div>`:""}
+    </div><button class="edit" onclick='abrirEdit(${JSON.stringify(x.ID_Gestion)})'>Editar</button></div>
+  </div>`).join("");
+}
+
+let EDIT_ID=null;
+function abrirEdit(id){
+  const x=DATA.find(r=>r.ID_Gestion===id); if(!x)return; EDIT_ID=id;
+  eTit.textContent="Editar "+x.ID_Gestion; eSub.textContent=x.Area+" — "+x.Resumen;
+  eNec.value=x.Necesidad_Real||""; eProp.value=x.Propuesta_Mejor||""; eNotas.value=x.Notas_Reunion||"";
+  eDes.value=x.Destino||"Por definir"; eResp.value=x.Responsable||"Christian"; ePri.value=x.Prioridad||"Media"; eEst.value=x.Estado||"En análisis"; eIds.value=x.ID_Sistema||"";
+  document.getElementById("mEdit").classList.add("on");
+}
+async function guardar(){
+  const b=document.getElementById("eSave"); b.textContent="Guardando…"; b.disabled=true;
+  try{
+    const r=await jsonp({action:"update",id:EDIT_ID,Necesidad_Real:eNec.value,Propuesta_Mejor:eProp.value,
+      Notas_Reunion:eNotas.value,Destino:eDes.value,Responsable:eResp.value,Prioridad:ePri.value,Estado:eEst.value,ID_Sistema:eIds.value});
+    if(!r.ok)throw new Error(r.error||"no ok");
+    cerrar("mEdit"); await cargar();
+  }catch(e){alert("No se pudo guardar: "+e.message);}
+  b.textContent="Guardar"; b.disabled=false;
+}
+function abrirNueva(){["nArea","nIds","nRes","nNec"].forEach(i=>document.getElementById(i).value="");document.getElementById("mNew").classList.add("on");}
+async function crear(){
+  const b=document.getElementById("nSave"); b.textContent="Creando…"; b.disabled=true;
+  try{
+    const r=await jsonp({action:"new",Area:nArea.value,ID_Sistema:nIds.value,Resumen:nRes.value,
+      Mi_Evaluacion:nEv.value,Prioridad:nPri.value,Destino:nDes.value,Estado:nEst.value,Necesidad_Real:nNec.value,Responsable:"Christian"});
+    if(!r.ok)throw new Error(r.error||"no ok");
+    cerrar("mNew"); await cargar();
+  }catch(e){alert("No se pudo crear: "+e.message);}
+  b.textContent="Crear"; b.disabled=false;
+}
+function cerrar(id){document.getElementById(id).classList.remove("on");}
+[fArea,fPri,fEst,fDes].forEach(el=>el.addEventListener("change",render));
+fTxt.addEventListener("input",render);
+document.querySelectorAll(".mask").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("on");}));
+cargar();
+</script></body></html>
