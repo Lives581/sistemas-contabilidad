@@ -20,6 +20,7 @@ select,input,textarea{font-family:inherit;font-size:13px;border:1px solid #CBD5D
 select:focus,input:focus,textarea:focus{outline:2px solid var(--esm);border-color:var(--esm)}
 .btn{background:var(--pet);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
 .btn.alt{background:var(--esm)}.btn.ghost{background:#fff;color:var(--pet);border:1px solid #CBD5D1}
+.btn.xls{background:#1D6F42}
 .btn:hover{opacity:.92}
 .grow{flex:1}
 .card{background:#fff;border:1px solid #E2ECE9;border-radius:10px;padding:13px 16px;margin-bottom:10px}
@@ -71,6 +72,7 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--esm);border-colo
   <select id="fDes"><option value="">Todo destino</option><option>Lo resuelvo yo</option><option>A Sistemas</option><option>Depurar</option><option>Por definir</option></select>
   <input id="fTxt" class="grow" placeholder="Buscar en resumen / necesidad…">
   <button class="btn ghost" onclick="cargar()">↻ Actualizar</button>
+  <button class="btn xls" onclick="exportarExcel()">⬇ Exportar Excel</button>
   <button class="btn alt" onclick="abrirNueva()">＋ Nueva</button>
 </div>
 
@@ -142,6 +144,72 @@ function jsonp(params){
 }
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function chip(txt,color){return txt?`<span class="chip" style="background:${color}">${esc(txt)}</span>`:"";}
+
+
+/* ---- Exportar filtrado a Excel (HTML con estilo, Excel lo abre nativo) ---- */
+const HEXPRI={"Alta":"#0E3B36","Media":"#F59E0B","Baja":"#64748B","Depurar":"#DC2626"};
+const HEXEV ={"Mi enfoque":"#10B981","Puente":"#F59E0B","Núcleo Sistemas":"#64748B","No aplica":"#94A3B8"};
+const HEXDES={"Lo resuelvo yo":"#10B981","A Sistemas":"#64748B","Depurar":"#DC2626","Por definir":"#94A3B8"};
+const HEXEST={"Realizar":"#10B981","No realizar":"#DC2626","Atendido":"#10B981","En construcción":"#F59E0B","Descartado":"#DC2626","Validado con área":"#0E3B36"};
+function exc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function tdColor(txt,map){const bg=map[txt]||"#F1F6F4";const dark=["#0E3B36","#64748B","#DC2626","#10B981"].includes(bg);
+  return `<td style="border:1px solid #94A3B8;padding:5px 8px;background:${bg};color:${dark?"#fff":"#1f2937"};font-weight:700;font-size:11px;text-align:center;white-space:nowrap">${exc(txt)}</td>`;}
+function tdPlain(txt,w){return `<td style="border:1px solid #94A3B8;padding:5px 8px;font-size:11px;vertical-align:top;${w?("width:"+w+"px;"):""}">${exc(txt)}</td>`;}
+
+function exportarExcel(){
+  const rows=filtrar();
+  if(!rows.length){ alert("No hay solicitudes con el filtro actual para exportar."); return; }
+  const hoy=new Date().toLocaleDateString("es-PE");
+  const filtroDesc=[
+    fArea.value?("Área: "+fArea.value):null,
+    fPri.value?("Prioridad: "+fPri.value):null,
+    fEst.value?("Estado: "+fEst.value):null,
+    fDes.value?("Destino: "+fDes.value):null,
+    fTxt.value?("Texto: \""+fTxt.value+"\""):null
+  ].filter(Boolean).join("  ·  ") || "Todas las solicitudes";
+
+  const cols=["ID","Área","Resumen","Prioridad","Evaluación","Necesidad real","Propuesta","Destino","Estado","Notas de reunión"];
+  const widths=[70,120,240,70,110,220,220,100,90,180];
+  let thead="<tr>"+cols.map((c,i)=>`<th style="border:1px solid #0E3B36;background:#0E3B36;color:#fff;padding:7px 8px;font-size:11px;text-align:left;width:${widths[i]}px">${exc(c)}</th>`).join("")+"</tr>";
+
+  let tbody=rows.map(x=>{
+    return "<tr>"
+      + tdPlain(x.ID_Gestion,widths[0])
+      + tdPlain(x.Area,widths[1])
+      + tdPlain(x.Resumen,widths[2])
+      + tdColor(x.Prioridad,HEXPRI)
+      + tdColor(x.Mi_Evaluacion,HEXEV)
+      + tdPlain(x.Necesidad_Real,widths[5])
+      + tdPlain(x.Propuesta_Mejor,widths[6])
+      + tdColor(x.Destino,HEXDES)
+      + tdColor(x.Estado,HEXEST)
+      + tdPlain(x.Notas_Reunion,widths[9])
+      + "</tr>";
+  }).join("");
+
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+  <head><meta charset="UTF-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+  <x:Name>Solicitudes</x:Name><x:WorksheetOptions><x:DisplayGridlines/><x:Print><x:ValidPrinterInfo/><x:PaperSizeIndex>9</x:PaperSizeIndex><x:Landscape/><x:FitWidth>1</x:FitWidth><x:FitHeight>0</x:FitHeight></x:Print></x:WorksheetOptions>
+  </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    body{font-family:Calibri,Arial,sans-serif}
+    table{border-collapse:collapse}
+    .tit{font-size:16px;font-weight:700;color:#0E3B36}
+    .sub{font-size:11px;color:#64748B}
+  </style></head><body>
+  <table><tr><td colspan="${cols.length}" class="tit" style="padding:4px 0">LIVES — Gestión de Solicitudes a Sistemas</td></tr>
+  <tr><td colspan="${cols.length}" class="sub" style="padding:0 0 8px 0">Exportado: ${hoy}  ·  Filtro: ${exc(filtroDesc)}  ·  Total: ${rows.length} solicitudes</td></tr></table>
+  <table>${thead}${tbody}</table>
+  </body></html>`;
+
+  const blob=new Blob(["\ufeff"+html],{type:"application/vnd.ms-excel"});
+  const a=document.createElement("a");
+  const areaTag=fArea.value?fArea.value.replace(/[^a-zA-Z0-9]+/g,"_"):"Todas";
+  a.href=URL.createObjectURL(blob);
+  a.download=`Solicitudes_Sistemas_${areaTag}_${hoy.replace(/\//g,"-")}.xls`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
 
 async function cargar(){
   if(CONFIG.APPS_SCRIPT_URL.indexOf("PEGAR")===0){
