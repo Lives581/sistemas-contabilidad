@@ -31,6 +31,16 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--esm);border-colo
 .cne{font-size:12.5px;color:#374151;margin-top:4px}.cne b{color:var(--pet)}
 .edit{background:#fff;border:1px solid #CBD5D1;color:var(--pet);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .edit:hover{background:var(--bg)}
+.qacts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.qrow{display:flex;gap:6px}
+.qbtn{border:1px solid #CBD5D1;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.qbtn.ok{color:var(--esm);border-color:var(--esm)}
+.qbtn.ok.active{background:var(--esm);color:#fff}
+.qbtn.no{color:var(--roj);border-color:var(--roj)}
+.qbtn.no.active{background:var(--roj);color:#fff}
+.qbtn:hover{opacity:.85}
+.card.st-realizar{border-left:4px solid var(--esm)}
+.card.st-norealizar{border-left:4px solid var(--roj);opacity:.75}
 .mask{position:fixed;inset:0;background:rgba(14,59,54,.45);display:none;align-items:flex-start;justify-content:center;z-index:40;padding:30px 16px;overflow:auto}
 .mask.on{display:flex}
 .modal{background:#fff;border-radius:12px;max-width:640px;width:100%;padding:22px 24px}
@@ -57,7 +67,7 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--esm);border-colo
 <div class="bar">
   <select id="fArea"><option value="">Todas las áreas</option></select>
   <select id="fPri"><option value="">Toda prioridad</option><option>Alta</option><option>Media</option><option>Baja</option><option>Depurar</option></select>
-  <select id="fEst"><option value="">Todo estado</option><option>Nuevo</option><option>En análisis</option><option>Validado con área</option><option>En construcción</option><option>Atendido</option><option>Descartado</option></select>
+  <select id="fEst"><option value="">Todo estado</option><option>Nuevo</option><option>En análisis</option><option>Validado con área</option><option>Realizar</option><option>No realizar</option><option>En construcción</option><option>Atendido</option><option>Descartado</option></select>
   <select id="fDes"><option value="">Todo destino</option><option>Lo resuelvo yo</option><option>A Sistemas</option><option>Depurar</option><option>Por definir</option></select>
   <input id="fTxt" class="grow" placeholder="Buscar en resumen / necesidad…">
   <button class="btn ghost" onclick="cargar()">↻ Actualizar</button>
@@ -77,7 +87,7 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--esm);border-colo
     <div class="fld"><label>Destino</label><select id="eDes"><option>Lo resuelvo yo</option><option>A Sistemas</option><option>Depurar</option><option>Por definir</option></select></div>
     <div class="fld"><label>Responsable</label><select id="eResp"><option>Christian</option><option>Sistemas</option><option>Área</option><option>Christian+Sistemas</option></select></div>
     <div class="fld"><label>Prioridad</label><select id="ePri"><option>Alta</option><option>Media</option><option>Baja</option><option>Depurar</option></select></div>
-    <div class="fld"><label>Estado</label><select id="eEst"><option>Nuevo</option><option>En análisis</option><option>Validado con área</option><option>En construcción</option><option>Atendido</option><option>Descartado</option></select></div>
+    <div class="fld"><label>Estado</label><select id="eEst"><option>Nuevo</option><option>En análisis</option><option>Validado con área</option><option>Realizar</option><option>No realizar</option><option>En construcción</option><option>Atendido</option><option>Descartado</option></select></div>
   </div>
   <div class="fld"><label>Notas de reunión</label><textarea id="eNotas"></textarea></div>
   <div class="fld"><label>ID de Sistema (si lo cruzaste con el área)</label><input id="eIds"></div>
@@ -113,7 +123,7 @@ const PW={"Alta":0,"Media":1,"Baja":2,"Depurar":3,"":4};
 const COL={
   ev:{"Mi enfoque":"var(--esm)","Puente":"var(--amb)","Núcleo Sistemas":"var(--sla)","No aplica":"var(--gris)"},
   pri:{"Alta":"var(--pet)","Media":"var(--amb)","Baja":"var(--sla)","Depurar":"var(--roj)"},
-  est:{"Atendido":"var(--esm)","En construcción":"var(--amb)","Descartado":"var(--roj)","Validado con área":"var(--pet)"},
+  est:{"Atendido":"var(--esm)","En construcción":"var(--amb)","Descartado":"var(--roj)","Validado con área":"var(--pet)","Realizar":"var(--esm)","No realizar":"var(--roj)"},
   des:{"Lo resuelvo yo":"var(--esm)","A Sistemas":"var(--sla)","Depurar":"var(--roj)","Por definir":"var(--gris)"}
 };
 let DATA=[];
@@ -161,15 +171,20 @@ function kpis(){
   const box=document.getElementById("kpis");
   const n=DATA.length, mio=DATA.filter(x=>x.Destino==="Lo resuelvo yo").length,
     sis=DATA.filter(x=>x.Destino==="A Sistemas").length, alta=DATA.filter(x=>x.Prioridad==="Alta").length,
-    aten=DATA.filter(x=>x.Estado==="Atendido").length, pend=DATA.filter(x=>x.Estado!=="Atendido"&&x.Estado!=="Descartado").length;
-  box.innerHTML=[[n,"Solicitudes"],[alta,"Prioridad Alta"],[mio,"Las resuelvo yo"],[sis,"A Sistemas"],[pend,"Pendientes"],[aten,"Atendidas"]]
+    real=DATA.filter(x=>x.Estado==="Realizar").length, noreal=DATA.filter(x=>x.Estado==="No realizar").length,
+    sindecidir=DATA.filter(x=>x.Estado!=="Realizar"&&x.Estado!=="No realizar"&&x.Estado!=="Atendido"&&x.Estado!=="Descartado").length;
+  box.innerHTML=[[n,"Solicitudes"],[alta,"Prioridad Alta"],[mio,"Las resuelvo yo"],[sis,"A Sistemas"],[real,"Marcadas Realizar"],[noreal,"Marcadas No realizar"],[sindecidir,"Sin decidir aún"]]
     .map(([a,b])=>`<div class="kpi"><div class="kn">${a}</div><div class="kl">${b}</div></div>`).join("");
 }
 function render(){
   kpis();
   const rows=filtrar(); const L=document.getElementById("lista");
   if(!rows.length){L.innerHTML='<div class="empty">Sin solicitudes que coincidan.</div>';return;}
-  L.innerHTML=rows.map(x=>`<div class="card">
+  L.innerHTML=rows.map(x=>{
+    const stCls = x.Estado==="Realizar" ? " st-realizar" : (x.Estado==="No realizar" ? " st-norealizar" : "");
+    const okActive = x.Estado==="Realizar" ? " active" : "";
+    const noActive = x.Estado==="No realizar" ? " active" : "";
+    return `<div class="card${stCls}">
     <div class="crow"><div>
       <div class="cid">${esc(x.ID_Gestion)}${x.ID_Sistema?" · "+esc(x.ID_Sistema):""} · ${esc(x.Area)}</div>
       <div class="cres">${esc(x.Resumen)}</div>
@@ -182,8 +197,28 @@ function render(){
       ${x.Necesidad_Real?`<div class="cne"><b>Necesidad:</b> ${esc(x.Necesidad_Real)}</div>`:""}
       ${x.Propuesta_Mejor?`<div class="cne"><b>Propuesta:</b> ${esc(x.Propuesta_Mejor)}</div>`:""}
       ${x.Notas_Reunion?`<div class="cne"><b>Notas:</b> ${esc(x.Notas_Reunion)}</div>`:""}
-    </div><button class="edit" onclick='abrirEdit(${JSON.stringify(x.ID_Gestion)})'>Editar</button></div>
-  </div>`).join("");
+    </div>
+    <div class="qacts">
+      <div class="qrow">
+        <button class="qbtn ok${okActive}" onclick='marcarEstado(${JSON.stringify(x.ID_Gestion)},"Realizar")'>✓ Realizar</button>
+        <button class="qbtn no${noActive}" onclick='marcarEstado(${JSON.stringify(x.ID_Gestion)},"No realizar")'>✕ No realizar</button>
+      </div>
+      <button class="edit" onclick='abrirEdit(${JSON.stringify(x.ID_Gestion)})'>Editar</button>
+    </div>
+    </div>
+  </div>`;
+  }).join("");
+}
+
+async function marcarEstado(id, estado){
+  const x = DATA.find(r=>r.ID_Gestion===id); if(!x) return;
+  x.Estado = estado; render(); // optimista: refleja al instante
+  try{
+    const r = await jsonp({action:"update", id:id, Estado:estado});
+    if(!r.ok) throw new Error(r.error||"no ok");
+  }catch(e){
+    alert("No se pudo guardar el estado: "+e.message+"\nSe revertirá al actualizar.");
+  }
 }
 
 let EDIT_ID=null;
